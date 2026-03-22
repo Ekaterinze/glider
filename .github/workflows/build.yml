@@ -18,25 +18,14 @@ jobs:
         with:
           python-version: '3.8'
       
-      # 🔥 ТОЛЬКО необходимые системные пакеты
       - name: Install minimal system dependencies
         run: |
           sudo apt update
           sudo apt install -y \
-            git \
-            zip \
-            unzip \
-            openjdk-17-jdk \
-            python3-pip \
-            autoconf \
-            libtool \
-            pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            cmake \
-            libffi-dev \
-            libssl-dev
+            git zip unzip openjdk-17-jdk python3-pip \
+            autoconf libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev cmake \
+            libffi-dev libssl-dev
           pip3 install --upgrade Cython==0.29.33 buildozer
       
       - name: Cache Buildozer dependencies
@@ -52,6 +41,7 @@ jobs:
       
       - name: Build APK
         run: |
+          # Buildozer сам примет лицензии благодаря android.accept_sdk_license = True
           buildozer android debug
       
       - name: Upload APK
