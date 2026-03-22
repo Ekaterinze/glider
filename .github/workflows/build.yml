@@ -1,0 +1,72 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Позволяет запускать сборку вручную
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Скачивание кода
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # 2. Настройка Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      
+      # 3. Установка системных зависимостей
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip \
+            autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev \
+            libgl1-mesa-dev libgstreamer1.0-dev gstreamer1.0-plugins-base
+          pip3 install --upgrade Cython==0.29.33 buildozer
+      
+      # 4. Кэширование (ускоряет повторные сборки)
+      - name: Cache Buildozer dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.buildozer
+            ~/.android
+            ~/.gradle
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+      
+      # 5. Принятие лицензий Android SDK
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses || true
+      
+      # 6. Сборка APK (32-bit)
+      - name: Build 32-bit APK
+        run: |
+          buildozer android debug
+      
+      # 7. Сохранение APK (артефакт)
+      - name: Upload 32-bit APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: glider-armeabi-v7a
+          path: bin/*.apk
+          retention-days: 30
+      
+      # 8. Создание релиза на GitHub (если это тег версии)
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: bin/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_Glider }}
