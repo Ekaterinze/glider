@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Позволяет запускать сборку вручную
+  workflow_dispatch:  # Ручной запуск
 
 jobs:
   build:
@@ -14,11 +14,11 @@ jobs:
     steps:
       # 1. Скачивание кода
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       # 2. Настройка Python
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
       
@@ -32,9 +32,9 @@ jobs:
             libgl1-mesa-dev libgstreamer1.0-dev gstreamer1.0-plugins-base
           pip3 install --upgrade Cython==0.29.33 buildozer
       
-      # 4. Кэширование (ускоряет повторные сборки)
+      # 4. Кэширование
       - name: Cache Buildozer dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.buildozer
@@ -49,24 +49,26 @@ jobs:
         run: |
           yes | sdkmanager --licenses || true
       
-      # 6. Сборка APK (32-bit)
-      - name: Build 32-bit APK
+      # 6. Сборка APK
+      - name: Build APK
         run: |
           buildozer android debug
       
-      # 7. Сохранение APK (артефакт)
-      - name: Upload 32-bit APK
-        uses: actions/upload-artifact@v3
+      # 7. Upload artifact v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: glider-armeabi-v7a
+          name: glider-apk
           path: bin/*.apk
           retention-days: 30
+          # В v4 нет параметра if-no-files-found по умолчанию, но можно добавить:
+          if-no-files-found: warn
       
-      # 8. Создание релиза на GitHub (если это тег версии)
+      # 8. Создание релиза (если это тег)
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2 
         with:
           files: bin/*.apk
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_Glider }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
