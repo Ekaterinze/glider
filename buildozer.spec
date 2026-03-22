@@ -6,7 +6,7 @@ source.dir = .
 version = 0.1
 
 # 🔥 Исправлено: без пробелов перед запятой
-requirements = python3,kivy==2.2.1,kivymd==2.0.0
+requirements = python3,kivy==2.2.1,kivymd==1.1.1
 
 presplash.filename = %(source.dir)s/data/logo/presplash512okmin.png
 icon.filename = %(source.dir)s/data/logo/logo512min.png
