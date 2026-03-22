@@ -39,13 +39,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
       
-      # 🔥 ШАГ 1: Устанавливаем Java 17 как основную (для следующих шагов)
+      # Устанавливаем Java 17 как основную (для следующих шагов)
       - name: Set Java 17 as default
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64" >> $GITHUB_ENV
           echo "/usr/lib/jvm/temurin-17-jdk-amd64/bin" >> $GITHUB_PATH
       
-      # 🔥 ШАГ 2: Сборка (JAVA_HOME и PATH уже применены!)
+      # Сборка универсального APK (32 + 64 бит)
       - name: Build APK
         run: |
           # Проверка: должна быть Java 17
@@ -53,13 +53,29 @@ jobs:
           java -version
           echo "=== JAVA_HOME ==="
           echo $JAVA_HOME
+          echo "=== Buildozer version ==="
+          buildozer --version
           
           # Запуск сборки
           buildozer android debug
+
+          mv bin/*.apk bin/glider-universal-debug.apk 2>/dev/null || true
       
-      - name: Upload APK
+      - name: Upload Universal APK
         uses: actions/upload-artifact@v4
         with:
-          name: glider-apk
-          path: bin/*.apk
+          name: glider-universal-apk
+          path: bin/glider-universal-debug.apk
           if-no-files-found: error
+
+      # Рилиз:
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/glider-universal-debug.apk
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
