@@ -50,10 +50,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
       
-      - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
-      
       - name: Build APK
         run: |
           buildozer android debug
