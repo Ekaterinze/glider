@@ -24,7 +24,7 @@ android.api = 33
 android.minapi = 21
 
 # 🔥 Архитектуры: 32 + 64 бит
-android.archs = armeabi-v7a, arm64-v8a
+android.archs = arm64-v8a
 
 # 🔥 Критично для CI/CD
 android.accept_sdk_license = True
