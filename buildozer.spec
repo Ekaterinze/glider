@@ -1,6 +1,6 @@
 [app]
-title = Glider
-package.name = glider
+title = Planer
+package.name = planer
 package.domain = org.wiseplat
 source.dir = .
 version = 0.1

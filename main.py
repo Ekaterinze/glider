@@ -2,7 +2,7 @@ from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.button import MDRaisedButton
 
-class GliderApp(MDApp):
+class PlanerApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Orange"
@@ -14,4 +14,4 @@ class GliderApp(MDApp):
             )
         )
 
-GliderApp().run()
+PlanerApp().run()
