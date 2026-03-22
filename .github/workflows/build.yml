@@ -39,9 +39,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
       
+      # 🔥 КРИТИЧНО: Переключаем Java на версию 17
+      - name: Set Java 17 as default
+        run: |
+          echo "JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64" >> $GITHUB_ENV
+          echo "/usr/lib/jvm/temurin-17-jdk-amd64/bin" >> $GITHUB_PATH
+          java -version  # Проверка: должна быть 17
+      
       - name: Build APK
         run: |
-          # Buildozer сам примет лицензии благодаря android.accept_sdk_license = True
           buildozer android debug
       
       - name: Upload APK
