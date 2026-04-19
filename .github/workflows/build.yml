@@ -47,15 +47,15 @@ jobs:
       
       - name: Accept Android SDK licenses
         run: |
-          # Путь к sdkmanager (Buildozer создаёт его при первом запуске)
           SDKMANAGER=~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          # Если sdkmanager ещё не существует – запускаем buildozer один раз, чтобы он скачал SDK
+          # Если sdkmanager ещё не существует – запускаем buildozer, чтобы он скачал SDK
           if [ ! -f "$SDKMANAGER" ]; then
             buildozer android debug || true
           fi
-          # Принимаем все лицензии
-          yes | $SDKMANAGER --licenses
-
+          # Принимаем лицензии, подавляя ошибку broken pipe
+          (while true; do echo y; done) | $SDKMANAGER --licenses 2>/dev/null || true
+          # Убеждаемся, что нужные build-tools установлены
+          $SDKMANAGER "build-tools;33.0.0" || true
       # Сборка универсального APK (32 + 64 бит)
       - name: Build APK
         run: |
