@@ -12,7 +12,7 @@ presplash.filename = %(source.dir)s/data/logo/presplash512okmin.png
 icon.filename = %(source.dir)s/data/logo/logo512min.png
 
 # Ориентация: закомментировано = авто-поворот (по умолчанию)
-#orientation = sensor
+orientation = portrait
 
 [buildozer]
 log_level = 2
