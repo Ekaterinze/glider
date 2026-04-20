@@ -39,52 +39,88 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
       
-      # Устанавливаем Java 17 как основную (для следующих шагов)
       - name: Set Java 17 as default
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64" >> $GITHUB_ENV
           echo "/usr/lib/jvm/temurin-17-jdk-amd64/bin" >> $GITHUB_PATH
-      
-      - name: Accept Android SDK licenses
+
+      - name: Install Android SDK
         run: |
-          SDKMANAGER=~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          # Если sdkmanager ещё не существует – запускаем buildozer, чтобы он скачал SDK
-          if [ ! -f "$SDKMANAGER" ]; then
-            buildozer android debug || true
-          fi
-          # Принимаем лицензии, подавляя ошибку broken pipe
-          (while true; do echo y; done) | $SDKMANAGER --licenses 2>/dev/null || true
-          # Убеждаемся, что нужные build-tools установлены
-          $SDKMANAGER "build-tools;33.0.0" || true
-      # Сборка универсального APK (32 + 64 бит)
+          SDK_DIR=~/.buildozer/android/platform/android-sdk
+          
+          # 1. Создаем целевую структуру до конца
+          mkdir -p $SDK_DIR/cmdline-tools/latest
+          
+          # 2. Скачиваем во временную папку
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          
+          # 3. Распаковываем
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          rm commandlinetools-linux-11076708_latest.zip
+          
+          # 4. Копируем содержимое распакованной папки в latest
+          # Внутри /tmp/cmdline-tools лежат bin, lib, NOTICE.txt и т.д.
+          # Мы копируем их все внутрь $SDK_DIR/cmdline-tools/latest
+          cp -r /tmp/cmdline-tools/* $SDK_DIR/cmdline-tools/latest/
+          
+          # 5. Очищаем временные файлы
+          rm -rf /tmp/cmdline-tools
+          
+          # 6. Настраиваем переменные окружения
+          export ANDROID_SDK_ROOT=$SDK_DIR
+          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+          echo "$SDK_DIR/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+      - name: Fix SDK Structure for Buildozer
+        run: |
+          SDK_DIR=~/.buildozer/android/platform/android-sdk
+          
+          # Создаем папку tools/bin (игнорируем ошибку, если уже есть)
+          mkdir -p $SDK_DIR/tools/bin
+          
+          # Создаем символические ссылки с флагом -f (принудительно)
+          ln -sf $SDK_DIR/cmdline-tools/latest/bin/sdkmanager $SDK_DIR/tools/bin/sdkmanager
+          ln -sf $SDK_DIR/cmdline-tools/latest/bin/avdmanager $SDK_DIR/tools/bin/avdmanager
+          
+          # Проверка, что ссылки созданы верно
+          ls -la $SDK_DIR/tools/bin/
+
+      - name: Accept Android Licenses
+        run: |
+          yes | sdkmanager --licenses
+      
+      - name: Install required build-tools
+        run: |
+          sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33"
+      
       - name: Build APK
         run: |
-          # Проверка: должна быть Java 17
           echo "=== Java version ==="
           java -version
-          echo "=== JAVA_HOME ==="
-          echo $JAVA_HOME
+          echo "=== ANDROID_SDK_ROOT ==="
+          echo $ANDROID_SDK_ROOT
           echo "=== Buildozer version ==="
           buildozer --version
           
-          # Запуск сборки
+          # Запускаем сборку
           buildozer android debug
-
-          mv bin/*.apk bin/planer-universal-debug.apk 2>/dev/null || true
+          
+          # Переименовываем APK для удобства
+          mv bin/*.apk bin/planer-debug.apk 2>/dev/null || true
       
       - name: Upload Universal APK
         uses: actions/upload-artifact@v4
         with:
-          name: planer-universal-apk
-          path: bin/planer-universal-debug.apk
+          name: planer-apk
+          path: bin/planer-debug.apk
           if-no-files-found: error
 
-      # Рилиз:
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: bin/planer-universal-debug.apk
+          files: bin/planer-debug.apk
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
